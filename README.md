@@ -1,6 +1,10 @@
 # Paws & Preferences
 
 A mobile-first React + TypeScript app for quickly sorting live Cataas cats into likes and passes.
+You can access it through https://adamhaqiem.github.io/pawsnpref/
+
+https://github.com/user-attachments/assets/5b9e8850-b0ba-4fc9-b997-28fe332b26bd
+
 
 ## What It Does
 
