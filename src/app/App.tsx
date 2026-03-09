@@ -1,6 +1,13 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 
-import type { CatCard, DeckState } from '../features/deck/types';
+import type { CatCard, DeckState, SwipeDecision } from '../features/deck/types';
+import {
+  applyDecision,
+  resolveSwipeDecision,
+  SWIPE_EXIT_DURATION_MS,
+  SWIPE_EXIT_OFFSET_PX,
+  SWIPE_THRESHOLD_PX
+} from '../features/deck/state';
 import { fetchCatCards } from '../lib/cataas/cataas';
 import './App.css';
 
@@ -16,18 +23,46 @@ function getCountLabel(count: number): string {
   return `${count} cat${count === 1 ? '' : 's'} to rate`;
 }
 
+function getLikedCountLabel(count: number): string {
+  return `You liked ${count} cat${count === 1 ? '' : 's'}`;
+}
+
 function renderTags(tags: CatCard['tags']): string {
-  return tags.length > 0 ? tags.join(' • ') : 'Fresh from Cataas';
+  return tags.length > 0 ? tags.join(' â€¢ ') : 'Fresh from Cataas';
 }
 
 export function App() {
   const [deck, setDeck] = useState<DeckState>(initialState);
+  const [dragOffsetX, setDragOffsetX] = useState(0);
+  const [activePointerId, setActivePointerId] = useState<number | null>(null);
+  const [exitDecision, setExitDecision] = useState<SwipeDecision | null>(null);
+  const dragStartXRef = useRef(0);
+  const exitTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     void loadCats();
+
+    return () => {
+      if (exitTimeoutRef.current !== null) {
+        window.clearTimeout(exitTimeoutRef.current);
+      }
+    };
   }, []);
 
+  function resetInteractionState() {
+    setDragOffsetX(0);
+    setActivePointerId(null);
+    setExitDecision(null);
+
+    if (exitTimeoutRef.current !== null) {
+      window.clearTimeout(exitTimeoutRef.current);
+      exitTimeoutRef.current = null;
+    }
+  }
+
   async function loadCats() {
+    resetInteractionState();
+
     setDeck((current) => ({
       ...current,
       status: 'loading',
@@ -42,7 +77,8 @@ export function App() {
         remaining: cats,
         liked: [],
         disliked: [],
-        currentIndex: 0
+        currentIndex: 0,
+        finishedReason: cats.length === 0 ? 'empty-data' : undefined
       });
     } catch (error) {
       setDeck({
@@ -53,7 +89,65 @@ export function App() {
     }
   }
 
+  function commitDecision(decision: SwipeDecision) {
+    if (deck.status !== 'ready' || deck.remaining.length === 0 || exitDecision) {
+      return;
+    }
+
+    setActivePointerId(null);
+    setExitDecision(decision);
+    setDragOffsetX(decision === 'like' ? SWIPE_EXIT_OFFSET_PX : -SWIPE_EXIT_OFFSET_PX);
+
+    exitTimeoutRef.current = window.setTimeout(() => {
+      setDeck((current) => applyDecision(current, decision));
+      setDragOffsetX(0);
+      setExitDecision(null);
+      exitTimeoutRef.current = null;
+    }, SWIPE_EXIT_DURATION_MS);
+  }
+
+  function handlePointerDown(pointerId: number, clientX: number) {
+    if (exitDecision || deck.status !== 'ready') {
+      return;
+    }
+
+    dragStartXRef.current = clientX;
+    setActivePointerId(pointerId);
+    setDragOffsetX(0);
+  }
+
+  function handlePointerMove(pointerId: number, clientX: number) {
+    if (pointerId !== activePointerId || exitDecision) {
+      return;
+    }
+
+    setDragOffsetX(clientX - dragStartXRef.current);
+  }
+
+  function handlePointerRelease(pointerId: number) {
+    if (pointerId !== activePointerId) {
+      return;
+    }
+
+    setActivePointerId(null);
+
+    const decision = resolveSwipeDecision(dragOffsetX, SWIPE_THRESHOLD_PX);
+
+    if (decision) {
+      commitDecision(decision);
+      return;
+    }
+
+    setDragOffsetX(0);
+  }
+
   const visibleCards = deck.remaining.slice(0, 3).reverse();
+  const topCardRotation = Math.max(-18, Math.min(18, dragOffsetX / 12));
+  const topCardStyle = {
+    '--drag-x': `${dragOffsetX}px`,
+    '--drag-rotate': `${topCardRotation}deg`,
+    '--swipe-threshold': `${SWIPE_THRESHOLD_PX}px`
+  } as CSSProperties;
 
   return (
     <main className="app-shell">
@@ -61,8 +155,7 @@ export function App() {
         <p className="eyebrow">Paws &amp; Preferences</p>
         <h1>Find your favourite kitty.</h1>
         <p className="hero-copy">
-          Session 1 wires the live cat feed, stacked cards, and mobile-first shell. Swipe support
-          lands in Session 2.
+          Swipe or tap through a live stack of Cataas cats and see which ones make your shortlist.
         </p>
       </section>
 
@@ -83,12 +176,41 @@ export function App() {
         </section>
       ) : null}
 
-      {deck.status === 'finished' ? (
+      {deck.status === 'finished' && deck.finishedReason === 'empty-data' ? (
         <section className="status-panel" aria-live="polite">
           <h2>No cats are ready right now</h2>
           <p>We filtered out this batch because it didn&apos;t contain usable image ids.</p>
           <button className="action action-primary" onClick={() => void loadCats()} type="button">
             Reload batch
+          </button>
+        </section>
+      ) : null}
+
+      {deck.status === 'finished' && deck.finishedReason === 'deck-complete' ? (
+        <section className="status-panel summary-panel" aria-live="polite">
+          <p className="deck-label">Session complete</p>
+          <h2>{getLikedCountLabel(deck.liked.length)}</h2>
+          <p>
+            {deck.liked.length > 0
+              ? 'Here are the cats that made your final shortlist.'
+              : 'No favourites this round, but a new batch is one tap away.'}
+          </p>
+
+          {deck.liked.length > 0 ? (
+            <div className="liked-gallery" aria-label="Liked cats">
+              {deck.liked.map((card) => (
+                <article key={card.id} className="liked-card">
+                  <img className="liked-image" src={card.thumbUrl ?? card.imageUrl} alt={card.alt} />
+                  <p>{renderTags(card.tags)}</p>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="summary-empty">You didn&apos;t like any cats in this batch.</p>
+          )}
+
+          <button className="action action-primary" onClick={() => void loadCats()} type="button">
+            Restart
           </button>
         </section>
       ) : null}
@@ -100,23 +222,44 @@ export function App() {
               <p className="deck-label">Live API deck</p>
               <h2>{getCountLabel(deck.remaining.length)}</h2>
             </div>
-            <p className="deck-note">Swipe support lands in Session 2.</p>
+            <p className="deck-note">Swipe left to pass, swipe right to keep, or use the buttons.</p>
           </div>
 
           <div className="card-stack" aria-label="Cat cards">
             {visibleCards.map((card, index) => {
               const stackIndex = visibleCards.length - index - 1;
               const isTopCard = stackIndex === 0;
+              const exitClass =
+                isTopCard && exitDecision
+                  ? exitDecision === 'like'
+                    ? ' cat-card-exit-right'
+                    : ' cat-card-exit-left'
+                  : '';
 
               return (
                 <article
                   key={card.id}
-                  className={`cat-card${isTopCard ? ' cat-card-top' : ''}`}
+                  className={`cat-card${isTopCard ? ' cat-card-top' : ''}${exitClass}`}
+                  onPointerCancel={
+                    isTopCard ? (event) => handlePointerRelease(event.pointerId) : undefined
+                  }
+                  onPointerDown={
+                    isTopCard
+                      ? (event) => handlePointerDown(event.pointerId, event.clientX)
+                      : undefined
+                  }
+                  onPointerMove={
+                    isTopCard
+                      ? (event) => handlePointerMove(event.pointerId, event.clientX)
+                      : undefined
+                  }
+                  onPointerUp={isTopCard ? (event) => handlePointerRelease(event.pointerId) : undefined}
                   style={
                     {
                       '--stack-offset': `${stackIndex * 14}px`,
                       '--stack-scale': `${1 - stackIndex * 0.04}`,
-                      '--stack-opacity': `${1 - stackIndex * 0.18}`
+                      '--stack-opacity': `${1 - stackIndex * 0.18}`,
+                      ...(isTopCard ? topCardStyle : {})
                     } as CSSProperties
                   }
                 >
@@ -132,10 +275,20 @@ export function App() {
           </div>
 
           <div className="action-row" aria-label="Vote controls">
-            <button className="action action-muted" type="button" disabled>
+            <button
+              className="action action-muted"
+              type="button"
+              disabled={Boolean(exitDecision)}
+              onClick={() => commitDecision('dislike')}
+            >
               Dislike
             </button>
-            <button className="action action-primary" type="button" disabled>
+            <button
+              className="action action-primary"
+              type="button"
+              disabled={Boolean(exitDecision)}
+              onClick={() => commitDecision('like')}
+            >
               Like
             </button>
           </div>

@@ -2,6 +2,8 @@ export type SwipeDecision = 'like' | 'dislike';
 
 export type DeckStatus = 'loading' | 'ready' | 'error' | 'finished';
 
+export type DeckFinishedReason = 'empty-data' | 'deck-complete';
+
 export interface CatCard {
   id: string;
   imageUrl: string;
@@ -16,5 +18,6 @@ export interface DeckState {
   liked: CatCard[];
   disliked: CatCard[];
   currentIndex: number;
+  finishedReason?: DeckFinishedReason;
   errorMessage?: string;
 }

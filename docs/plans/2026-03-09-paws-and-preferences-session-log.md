@@ -21,7 +21,16 @@
 - Any GitHub Pages base-path adjustments: Vite `base` is set to `/pawsnfren/` to match the current repository name.
 - Any layout or mobile rendering problems discovered early: The first pass needed stronger spacing and stack visuals so the top card read clearly on narrow screens; Session 1 now ships with a dedicated mobile card stack layout, but gesture ergonomics are deferred to Session 2.
 
+## Session 2
+- Goal: Implement real voting, swipe gesture handling, completion summary UI, and restart behavior from the Session 2 plan.
+- Changes made: Replaced the Session 1 placeholder copy with live voting copy, added deck finish reasons plus pure deck-state helpers, wired Like/Dislike into a shared animated decision pipeline, added draggable top-card swipe handling with threshold-based accept/reject behavior, split empty-data from deck-complete rendering, added the liked-summary gallery and zero-liked copy, and wired restart to fetch a fresh batch. Expanded tests to cover button voting, summary rendering, restart flow, zero-liked behavior, and swipe-threshold helper logic.
+- Files added/modified: `src/app/App.tsx`, `src/app/App.css`, `src/app/App.test.tsx`, `src/features/deck/types.ts`, `src/features/deck/state.ts`, `src/features/deck/state.test.ts`, and `docs/plans/2026-03-09-paws-and-preferences-session-log.md`.
+- Verification performed: `npm.cmd test` passed with 17 tests across 3 files. `npm.cmd run build` passed and produced a production bundle under `dist/`. `npm.cmd run dev -- --host 127.0.0.1 --port 4173` was started for a sanity check, but the command timed out because the dev server is long-running and no browser inspection was completed in-session.
+- Problems faced: The fresh worktree had no dependencies installed, so `vitest` was initially unavailable until `npm.cmd install` ran. The full App test suite initially failed because renders were accumulating between tests, which required explicit `cleanup()` in `App.test.tsx`. An escalated `git status` inside the worktree also hit a dubious-ownership warning, so worktree metadata collection was limited.
+- Resolutions or follow-ups: Installed dependencies in `.worktrees/session-2`, added deterministic `Math.random` stubs and cleanup to stabilize App tests, and kept swipe math in pure helpers to avoid brittle DOM-only gesture assertions. Session 3 still needs the GitHub Pages base-path correction, README/deployment updates, and the chosen failed-image behavior.
+- Next session starting point: Implement Session 3 by handling image-load failures gracefully, refining stack/polish, correcting `vite.config.ts` from `/pawsnfren/` to the current repo path if deploying to `pawsnpref`, and adding the final README/deployment workflow updates.
+
 ## Upcoming Session Checklist
-- Session 2 must add real voting and summary behavior.
 - Session 3 must fix the Pages base-path mismatch if deployment targets `pawsnpref`.
+- Session 3 must finalize the failed-image behavior and deployment/docs polish.
 - Check whether `README.md` is still uncommitted before starting new feature work.
