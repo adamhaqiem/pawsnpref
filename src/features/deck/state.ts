@@ -4,6 +4,23 @@ export const SWIPE_THRESHOLD_PX = 110;
 export const SWIPE_EXIT_OFFSET_PX = 180;
 export const SWIPE_EXIT_DURATION_MS = 220;
 
+export function skipTopCard(deck: DeckState, cardId: string): DeckState {
+  const [currentCard, ...nextRemaining] = deck.remaining;
+
+  if (!currentCard || currentCard.id !== cardId) {
+    return deck;
+  }
+
+  return {
+    ...deck,
+    status: nextRemaining.length === 0 ? 'finished' : 'ready',
+    remaining: nextRemaining,
+    currentIndex: deck.currentIndex + 1,
+    finishedReason: nextRemaining.length === 0 ? 'deck-complete' : undefined,
+    errorMessage: undefined
+  };
+}
+
 export function applyDecision(deck: DeckState, decision: SwipeDecision): DeckState {
   const [currentCard, ...nextRemaining] = deck.remaining;
 

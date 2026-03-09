@@ -4,6 +4,7 @@ import type { CatCard, DeckState, SwipeDecision } from '../features/deck/types';
 import {
   applyDecision,
   resolveSwipeDecision,
+  skipTopCard,
   SWIPE_EXIT_DURATION_MS,
   SWIPE_EXIT_OFFSET_PX,
   SWIPE_THRESHOLD_PX
@@ -48,6 +49,21 @@ export function App() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (deck.status !== 'ready') {
+      return;
+    }
+
+    const nextCard = deck.remaining[1];
+
+    if (!nextCard) {
+      return;
+    }
+
+    const nextImage = new Image();
+    nextImage.src = nextCard.imageUrl;
+  }, [deck]);
 
   function resetInteractionState() {
     setDragOffsetX(0);
@@ -104,6 +120,15 @@ export function App() {
       setExitDecision(null);
       exitTimeoutRef.current = null;
     }, SWIPE_EXIT_DURATION_MS);
+  }
+
+  function handleTopCardImageError(cardId: string) {
+    if (deck.status !== 'ready' || exitDecision) {
+      return;
+    }
+
+    resetInteractionState();
+    setDeck((current) => skipTopCard(current, cardId));
   }
 
   function handlePointerDown(pointerId: number, clientX: number) {
@@ -257,13 +282,18 @@ export function App() {
                   style={
                     {
                       '--stack-offset': `${stackIndex * 14}px`,
-                      '--stack-scale': `${1 - stackIndex * 0.04}`,
-                      '--stack-opacity': `${1 - stackIndex * 0.18}`,
+                      '--stack-scale': `${1 - stackIndex * 0.03}`,
+                      '--stack-opacity': `${1 - stackIndex * 0.14}`,
                       ...(isTopCard ? topCardStyle : {})
                     } as CSSProperties
                   }
                 >
-                  <img className="cat-image" src={card.imageUrl} alt={card.alt} />
+                  <img
+                    className="cat-image"
+                    src={card.imageUrl}
+                    alt={card.alt}
+                    onError={isTopCard ? () => handleTopCardImageError(card.id) : undefined}
+                  />
                   <div className="card-copy">
                     <p className="card-label">{isTopCard ? 'Up next' : 'On deck'}</p>
                     <h3>{card.alt}</h3>

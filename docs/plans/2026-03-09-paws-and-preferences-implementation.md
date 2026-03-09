@@ -14,9 +14,9 @@
 
 ### Repository Snapshot
 - Current branch target is `main`.
-- Session 1 and Session 2 are complete and merged to `main`.
-- The app now supports button voting, swipe voting, completion summary, and restart flow.
-- `README.md` still needs to be checked during Session 3 work along with deployment/docs polish.
+- Sessions 1, 2, and 3 are complete on `main`.
+- The app now supports button voting, swipe voting, completion summary, restart flow, next-card preloading, and failed-image auto-skip handling.
+- `README.md` and the Pages workflow reflect the deployed app behavior.
 
 ### Current Working Files
 - [src/app/App.tsx](/c:/REPOS/pawsnfren/src/app/App.tsx): current app state and UI shell
@@ -134,7 +134,7 @@ Users can like or dislike cats by swiping left/right or by tapping explicit butt
 - Tests and build pass fresh.
 
 ### Session 3
-Status: Next required session
+Status: Complete
 
 #### Session 3 Outcome
 The app feels complete on mobile, handles image-loading failures more gracefully, documents how to run/deploy, and is ready for GitHub Pages hosting from the correct repository path.

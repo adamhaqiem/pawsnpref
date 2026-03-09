@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -139,6 +139,35 @@ describe('App', () => {
 
     expect(firstImage).not.toBeInTheDocument();
     expect(screen.getByRole('img', { name: /cat tagged calico/i })).toBeInTheDocument();
+  });
+
+  it('skips a failed top-card image and continues to the next cat', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.99);
+
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [
+        { _id: 'cat-1', tags: ['fluffy'] },
+        { _id: 'cat-2', tags: ['calico'] },
+        { _id: 'cat-3', tags: ['sleepy'] }
+      ]
+    }) as typeof fetch;
+
+    render(<App />);
+
+    expect(await screen.findByText(/3 cats to rate/i)).toBeInTheDocument();
+
+    const brokenTopImage = screen.getByRole('img', { name: /cat tagged fluffy/i });
+
+    fireEvent.error(brokenTopImage);
+
+    await waitFor(() => {
+      expect(screen.getByText(/2 cats to rate/i)).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole('img', { name: /cat tagged fluffy/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('img', { name: /cat tagged calico/i })).toBeInTheDocument();
+    expect(screen.queryByText(/you liked 1 cat/i)).not.toBeInTheDocument();
   });
 
   it('shows a completion summary when the deck is exhausted', async () => {

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { applyDecision, resolveSwipeDecision, SWIPE_EXIT_OFFSET_PX, SWIPE_THRESHOLD_PX } from './state';
+import {
+  applyDecision,
+  resolveSwipeDecision,
+  skipTopCard,
+  SWIPE_EXIT_OFFSET_PX,
+  SWIPE_THRESHOLD_PX
+} from './state';
 import type { DeckState } from './types';
 
 function createDeckState(overrides: Partial<DeckState> = {}): DeckState {
@@ -54,6 +60,25 @@ describe('applyDecision', () => {
     expect(nextDeck.liked).toEqual([]);
     expect(nextDeck.disliked.map((card) => card.id)).toEqual(['cat-1']);
     expect(nextDeck.finishedReason).toBe('deck-complete');
+  });
+});
+
+describe('skipTopCard', () => {
+  it('drops the failed top card without recording a vote', () => {
+    const nextDeck = skipTopCard(createDeckState(), 'cat-1');
+
+    expect(nextDeck.status).toBe('ready');
+    expect(nextDeck.remaining.map((card) => card.id)).toEqual(['cat-2']);
+    expect(nextDeck.liked).toEqual([]);
+    expect(nextDeck.disliked).toEqual([]);
+    expect(nextDeck.currentIndex).toBe(1);
+    expect(nextDeck.finishedReason).toBeUndefined();
+  });
+
+  it('ignores stale image failures from cards that are no longer on top', () => {
+    const nextDeck = skipTopCard(createDeckState(), 'cat-2');
+
+    expect(nextDeck).toEqual(createDeckState());
   });
 });
 

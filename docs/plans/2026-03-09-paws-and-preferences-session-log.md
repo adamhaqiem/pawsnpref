@@ -43,7 +43,15 @@
 - Resolutions or follow-ups: Keep the Cataas adapter tolerant of both `id` and `_id`, and treat upstream payload-shape drift as a likely recurring integration risk whenever the app suddenly reports an empty deck despite live API data existing.
 - Next session starting point: Continue with Session 3 from `main`, keeping an eye on Cataas payload compatibility while addressing image-failure handling, Pages base path, and final deployment/docs work.
 
+## Session 3
+- Goal: Finish the app polish, deployment setup, and graceful image-failure handling from the Session 3 plan.
+- Changes made: Added a regression test for failed top-card images, introduced a deck helper that auto-skips a broken top card without recording a vote, preloaded the next ready-state card image, and refined stack spacing and shadow so the active card remains visually dominant. Updated the Pages base path to `/pawsnpref/`, rewrote the README to match the shipped app, and added a GitHub Actions workflow that tests, builds, and deploys `dist/` to GitHub Pages from `main`.
+- Files added/modified: `src/app/App.tsx`, `src/app/App.css`, `src/app/App.test.tsx`, `src/features/deck/state.ts`, `src/features/deck/state.test.ts`, `vite.config.ts`, `README.md`, `.github/workflows/deploy-pages.yml`, `docs/plans/2026-03-09-paws-and-preferences-implementation.md`, and `docs/plans/2026-03-09-paws-and-preferences-session-log.md`.
+- Verification performed: `npm.cmd test -- src/app/App.test.tsx` first failed on the new broken-image behavior and then passed after the fix. Focused follow-up verification with `npm.cmd test -- src/app/App.test.tsx src/features/deck/state.test.ts` passed with 17 tests across 2 files. Final verification on `main`: `npm.cmd test` passed with 21 tests across 3 files, and `npm.cmd run build` passed with the updated `/pawsnpref/` base path.
+- Problems faced: Vitest and Vite still hit sandbox `spawn EPERM` during config startup, so all verification commands requiring `esbuild` had to run outside the sandbox. There was no existing repo-level Pages workflow to reuse, so deployment had to be wired from scratch.
+- Resolutions or follow-ups: Session 3 chose automatic skip for broken top-card images instead of an inline fallback card, because it avoids trapping the user on an unusable image while keeping liked and disliked counts accurate. GitHub Pages now expects `Settings > Pages > Source` to be set to `GitHub Actions`.
+- Next session starting point: If needed, do a post-deploy smoke test against the live GitHub Pages site on mobile and confirm the first production run publishes from the `Deploy Pages` workflow without repository-settings drift.
+
 ## Upcoming Session Checklist
-- Session 3 must fix the Pages base-path mismatch if deployment targets `pawsnpref`.
-- Session 3 must finalize the failed-image behavior and deployment/docs polish.
-- Check whether `README.md` is still uncommitted before starting new feature work.
+- All planned sessions are complete.
+- If new work starts, begin from `main` and confirm the Pages workflow is enabled in repository settings.
