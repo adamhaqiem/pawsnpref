@@ -1,13 +1,47 @@
-# Paws & Preferences Plan And Session Handoff
+# Paws & Preferences Implementation Plan
 
-## Summary
-Build a static `Vite + React + TypeScript` SPA for GitHub Pages that fetches cat images from the Cataas API, presents them in a mobile-first swipe deck, records `like` and `dislike` decisions in client state, and ends with a summary gallery of liked cats.
+> **For Codex in a new thread:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Before changing code, also load `test-driven-development` and `verification-before-completion`.
 
-Store two persistent planning artifacts in the repo:
-- `docs/plans/2026-03-09-paws-and-preferences-implementation.md`
-- `docs/plans/2026-03-09-paws-and-preferences-session-log.md`
+**Goal:** Finish the cat preference app as a mobile-first GitHub Pages SPA with swipe voting, a completion summary, and deployment-ready docs/workflow.
 
-## Public Interfaces And Core Types
+**Architecture:** The app is a static `Vite + React + TypeScript` SPA with all state held client-side. Cataas API fetching is isolated in `src/lib/cataas/cataas.ts`; the UI is currently centralized in `src/app/App.tsx` and should stay simple unless Session 2 extraction clearly improves the gesture/state flow.
+
+**Tech Stack:** React 19, TypeScript, Vite, Vitest, Testing Library, GitHub Pages
+
+---
+
+## Read This First In Any New Thread
+
+### Repository Snapshot
+- Current branch target is `main`.
+- Last implementation commit already merged to `main`: `ea70613` (`feat: implement session 1 foundation`).
+- Session 1 is complete and verified.
+- `README.md` exists locally but may still be uncommitted if the current branch shows it as untracked; check `git status` first.
+- The code currently renders a live Cataas-backed card stack with loading, error, retry, and empty states, but no real voting flow yet.
+
+### Current Working Files
+- [src/app/App.tsx](/c:/REPOS/pawsnfren/src/app/App.tsx): current app state and UI shell
+- [src/app/App.css](/c:/REPOS/pawsnfren/src/app/App.css): current layout and card stack styling
+- [src/lib/cataas/cataas.ts](/c:/REPOS/pawsnfren/src/lib/cataas/cataas.ts): API fetch + normalization
+- [src/app/App.test.tsx](/c:/REPOS/pawsnfren/src/app/App.test.tsx): Session 1 UI tests
+- [src/lib/cataas/cataas.test.ts](/c:/REPOS/pawsnfren/src/lib/cataas/cataas.test.ts): normalization tests
+- [vite.config.ts](/c:/REPOS/pawsnfren/vite.config.ts): Pages base-path config
+- [docs/plans/2026-03-09-paws-and-preferences-session-log.md](/c:/REPOS/pawsnfren/docs/plans/2026-03-09-paws-and-preferences-session-log.md): running handoff log
+
+### Known Mismatches And Risks
+- `origin` now points to `https://github.com/adamhaqiem/pawsnpref.git`, but [vite.config.ts](/c:/REPOS/pawsnfren/vite.config.ts) still sets `base: '/pawsnfren/'`. This must be corrected before GitHub Pages deployment.
+- The current UI copy still says swipe support is coming in Session 2. Remove or replace that copy when Session 2 lands.
+- The `finished` deck status is currently reused as the empty-data state in Session 1. Session 2 should distinguish `empty-data` from `deck-complete` in rendered behavior, even if the enum remains unchanged.
+- Cataas browser access is assumed to work without auth. If a future thread sees CORS/network failures in-browser, stop and re-evaluate whether the app needs a fallback or a curated local list.
+
+## Stable Product Decisions
+- Keep the app static-only. No backend, no database, no login, no persistence across sessions.
+- Continue using live Cataas data rather than a curated local image list.
+- Keep the UI mobile-first and playful-clean rather than cloning Tinder literally.
+- Keep the state local to the browser. Liked and disliked cards do not survive reloads.
+- Prefer minimal dependencies. Do not add a swipe library unless custom pointer handling becomes clearly unworkable.
+
+## Existing Internal Types
 - `CatCard`
   - `id: string`
   - `imageUrl: string`
@@ -26,79 +60,160 @@ Store two persistent planning artifacts in the repo:
   - `currentIndex`
   - `errorMessage?: string`
 
-These remain internal app types unless a later requirement introduces persistence or sharing.
+If new internal state is needed in Session 2, add it deliberately rather than overloading `currentIndex`.
 
-## Session Breakdown
-### Session 1: Foundation + API
-- Scaffold `Vite + React + TypeScript`.
-- Configure GitHub Pages base path and build output.
-- Establish app shell, design tokens, and mobile-first layout.
-- Add a Cataas client module that fetches a bounded list of cats and normalizes response data into `CatCard`.
-- Render a stacked card UI from live API data.
-- Include `loading`, `error`, `retry`, and `empty` states.
-- End state: the app builds and loads a live cat deck, but swipe actions can still be button-only placeholders or non-functional visuals.
+## Session Plan
 
-### Session 2: Swipe Loop + Summary
-- Implement custom pointer/touch drag logic with threshold-based left/right decisions.
-- Reuse the same decision path for explicit `Like` and `Dislike` buttons.
-- Advance the deck after each decision and store liked/disliked cards in memory.
-- Add the finished summary screen with liked count, liked gallery, and restart flow.
-- End state: full required user flow works end to end.
+### Session 1
+Status: Complete
 
-### Session 3: Polish + Verification + Deploy
-- Refine motion, stacking, and mobile ergonomics.
-- Preload the next image and handle image-load failure gracefully.
-- Add practical tests around normalization, deck transitions, and summary behavior.
-- Add GitHub Pages deployment workflow and README usage/deployment notes.
-- End state: public repo and hosted app are ready to submit.
+Delivered:
+- Vite/React/TypeScript scaffold
+- Cataas fetch + normalization
+- Mobile-first stacked card layout
+- Loading, error, retry, and empty states
+- Initial tests and verified production build
 
-## Session 1 Implementation Details
-- Initialize the app with Vite React TypeScript template.
-- Set `base` in Vite config to match the GitHub Pages repository name.
-- Create a small source structure such as:
-  - `src/app`
-  - `src/components`
-  - `src/features/deck`
-  - `src/lib/cataas`
-  - `src/styles`
-- Build the Cataas adapter behind one module so API shape changes stay isolated.
-- Fetch one batch on app start, normalize records, filter invalid entries, and keep a fixed working set of 10-12 cards.
-- Render card stack visuals with the top card emphasized and next cards partially visible.
-- Implement retry action for request failure and a friendly empty-state message if no usable cats are returned.
+Do not redo Session 1 unless a later task requires refactoring.
 
-## Test Plan
-- Session 1
-  - Verify successful fetch maps into `CatCard[]`.
-  - Verify malformed API entries are filtered out.
-  - Verify loading, error, retry, and empty states render correctly.
-- Session 2
-  - Verify like/dislike decisions remove the top card and update the correct array.
-  - Verify deck exhaustion transitions to summary.
-  - Verify restart triggers a new fetch and resets state.
-- Session 3
-  - Verify production build succeeds with Pages base path.
-  - Verify manual mobile behavior on narrow viewport for touch swipe, button fallback, and summary layout.
+### Session 2
+Status: Next required session
 
-## Session Log Format
-Maintain `docs/plans/2026-03-09-paws-and-preferences-session-log.md` with one section per session:
+#### Session 2 Outcome
+Users can like or dislike cats by swiping left/right or by tapping explicit buttons. Each decision removes the top card, updates local liked/disliked arrays, and advances the deck. When no cards remain, the app shows a summary screen with liked count, liked gallery, and a restart action that fetches a fresh batch.
 
-### Session N
-- Goal:
-- Changes made:
-- Files added/modified:
-- Verification performed:
-- Problems faced:
-- Resolutions or follow-ups:
-- Next session starting point:
+#### Session 2 Behavioral Spec
+- The top card must be draggable on pointer-capable devices.
+- Horizontal drag should move the card with visible `translateX`; small rotation tied to drag distance is required.
+- Releasing below threshold should animate the card back to center.
+- Releasing beyond threshold should animate the card out in the corresponding direction and commit the decision once.
+- Button-triggered `Like` and `Dislike` must use the same decision pipeline as gesture-triggered voting.
+- After a committed decision:
+  - remove the previous top card from `remaining`
+  - append that card to `liked` or `disliked`
+  - update any `currentIndex` or equivalent state consistently
+- When `remaining.length === 0` after a decision, show a completion summary instead of the deck.
+- Summary screen must show:
+  - total liked count
+  - responsive gallery of liked cards
+  - empty-liked copy if the user liked zero cats
+  - restart button that fetches a fresh batch and resets deck state
+- Session 1 placeholder copy about future swipe support must be removed.
 
-For Session 1 specifically, capture:
-- Cataas endpoint and payload assumptions used
-- Any CORS or image URL issues
-- Any GitHub Pages base-path adjustments
-- Any layout or mobile rendering problems discovered early
+#### Session 2 UI Constraints
+- Keep the current visual direction and card stack base styling.
+- Buttons must remain available as accessible fallback controls even after swipe is added.
+- On narrow screens, the card should remain fully visible without horizontal overflow.
+- Avoid over-animating. One clear drag transform + one clear accept/reject exit is enough.
 
-## Assumptions
-- Static hosting only, no backend or persistence.
-- Cataas API remains publicly accessible from the browser for the selected endpoint.
-- The exercise prioritizes a reliable, polished demo over random infinite browsing.
-- The repo currently has no scaffold, so Session 1 includes initial project setup in addition to feature work.
+#### Session 2 Suggested File Scope
+- Modify: [src/app/App.tsx](/c:/REPOS/pawsnfren/src/app/App.tsx)
+- Modify: [src/app/App.css](/c:/REPOS/pawsnfren/src/app/App.css)
+- Modify: [src/features/deck/types.ts](/c:/REPOS/pawsnfren/src/features/deck/types.ts) if extra state types are needed
+- Add or modify tests in [src/app/App.test.tsx](/c:/REPOS/pawsnfren/src/app/App.test.tsx)
+- Optionally extract helpers/components under `src/features/deck/` only if it clearly improves readability
+
+#### Session 2 Test-First Tasks
+1. Write a failing test for button-driven `Like` moving the top card into `liked` and reducing remaining count.
+2. Run `npm.cmd test -- src/app/App.test.tsx` or equivalent focused Vitest command and confirm failure for the correct reason.
+3. Implement the minimum state transition code to pass.
+4. Write a failing test for button-driven `Dislike`.
+5. Verify red, implement minimal code, verify green.
+6. Write a failing test for deck exhaustion showing the summary screen.
+7. Verify red, implement summary UI, verify green.
+8. Write a failing test for restart resetting state and fetching a new batch.
+9. Verify red, implement restart flow, verify green.
+10. Add focused tests for gesture threshold logic. If gesture logic is hard to test inline, extract pure helper functions and test them directly.
+
+#### Session 2 Acceptance Criteria
+- `Like` button works.
+- `Dislike` button works.
+- The deck advances exactly one card per decision.
+- Summary appears only when the deck is exhausted, not for loading/error states.
+- Restart returns the app to a fresh ready state with no prior likes/dislikes retained.
+- Gesture and button decisions do not duplicate or conflict.
+- Tests and build pass fresh.
+
+### Session 3
+Status: Final feature/deployment session
+
+#### Session 3 Outcome
+The app feels complete on mobile, handles image-loading failures more gracefully, documents how to run/deploy, and is ready for GitHub Pages hosting from the correct repository path.
+
+#### Session 3 Behavioral Spec
+- Preload the next card image once the current ready state is known.
+- If an image fails to load, avoid a broken-image dead end:
+  - either skip the failed card automatically
+  - or show a clean fallback state inside the card and allow the user to continue
+  - pick one approach and document it in the session log
+- Refine stack spacing/animation so the top card remains visually dominant during transitions.
+- Add README deployment instructions and app overview updates that match the final behavior.
+- Add a GitHub Actions workflow or other repo-native Pages deployment path, but only after the Vite base path is corrected to match the current remote repository name.
+
+#### Session 3 Required Fixes
+- Update [vite.config.ts](/c:/REPOS/pawsnfren/vite.config.ts) `base` from `/pawsnfren/` to `/pawsnpref/` if GitHub Pages will be served from the current `origin` repo.
+- Review all user-facing copy for outdated “coming in Session 2” text.
+- Commit the currently untracked [README.md](/c:/REPOS/pawsnfren/README.md) if it still has not been committed yet.
+
+#### Session 3 Suggested File Scope
+- Modify: [src/app/App.tsx](/c:/REPOS/pawsnfren/src/app/App.tsx)
+- Modify: [src/app/App.css](/c:/REPOS/pawsnfren/src/app/App.css)
+- Modify or add tests in [src/app/App.test.tsx](/c:/REPOS/pawsnfren/src/app/App.test.tsx)
+- Modify: [README.md](/c:/REPOS/pawsnfren/README.md)
+- Modify: [vite.config.ts](/c:/REPOS/pawsnfren/vite.config.ts)
+- Add: `.github/workflows/...` for Pages deployment if desired
+
+#### Session 3 Test-First Tasks
+1. Write a failing test around the chosen failed-image behavior, if the logic can be unit/integration tested without brittle DOM assumptions.
+2. Verify red, implement minimal behavior, verify green.
+3. Add tests covering the final summary rendering edge case for zero liked cats if not already covered in Session 2.
+4. Add any remaining pure helper tests for gesture math or preload/fallback behavior.
+5. Run full test suite and production build after the Pages base-path change.
+
+#### Session 3 Acceptance Criteria
+- No broken GitHub Pages base-path assumption remains.
+- README reflects the final app rather than Session 1 only.
+- Production build succeeds with the final base path.
+- The app is usable on narrow mobile screens with no obvious layout breakage.
+- The repo contains enough docs for another engineer to run, test, and deploy the project.
+
+## Commands
+
+### Install
+```powershell
+cmd /c "cd /d c:\REPOS\pawsnfren && npm.cmd install"
+```
+
+### Test
+```powershell
+cmd /c "cd /d c:\REPOS\pawsnfren && npm.cmd test"
+```
+
+### Build
+```powershell
+cmd /c "cd /d c:\REPOS\pawsnfren && npm.cmd run build"
+```
+
+### Dev Server
+```powershell
+cmd /c "cd /d c:\REPOS\pawsnfren && npm.cmd run dev"
+```
+
+If Vite/Vitest/esbuild fails under sandbox restrictions in a future thread, rerun the command with escalation rather than guessing.
+
+## Required Verification Before Ending Any Session
+- Run the relevant new tests during TDD red/green, not only at the end.
+- Run the full `npm.cmd test` suite before claiming the session is complete.
+- Run `npm.cmd run build` before claiming the session is complete.
+- Update [docs/plans/2026-03-09-paws-and-preferences-session-log.md](/c:/REPOS/pawsnfren/docs/plans/2026-03-09-paws-and-preferences-session-log.md) with:
+  - actual files changed
+  - actual verification output summary
+  - actual problems encountered
+  - exact next-session starting point
+
+## What A New Thread Should Do First
+1. Read this file.
+2. Read [docs/plans/2026-03-09-paws-and-preferences-session-log.md](/c:/REPOS/pawsnfren/docs/plans/2026-03-09-paws-and-preferences-session-log.md).
+3. Run `git status --short --branch` and confirm whether `README.md` or any other files are uncommitted.
+4. Read the current implementation entry points listed above.
+5. Continue with the next incomplete session only.

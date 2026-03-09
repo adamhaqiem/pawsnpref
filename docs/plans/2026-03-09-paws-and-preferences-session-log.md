@@ -1,5 +1,11 @@
 # Paws & Preferences Session Log
 
+## How To Use This Log In A New Thread
+- Read the implementation plan first.
+- Treat the latest completed session here as the authoritative current state.
+- Do not rely on old chat history; if something is not written here or in code, assume it is not guaranteed context.
+- At the end of every future session, append a new section using the same format and include exact verification results.
+
 ## Session 1
 - Goal: Build the Session 1 foundation, Cataas API integration, and deck shell described in the implementation plan.
 - Changes made: Bootstrapped a Vite + React + TypeScript app, configured the GitHub Pages base path for `/pawsnfren/`, added a Cataas adapter that fetches and normalizes a bounded card set, and built the first mobile-first deck shell with loading, error, retry, and empty states. Added Session 1 tests for API normalization and app state transitions.
@@ -14,3 +20,8 @@
 - Any CORS or image URL issues: No CORS issue was observed in test scaffolding; image URLs are built as `https://cataas.com/cat/<id>` with an optional thumbnail query.
 - Any GitHub Pages base-path adjustments: Vite `base` is set to `/pawsnfren/` to match the current repository name.
 - Any layout or mobile rendering problems discovered early: The first pass needed stronger spacing and stack visuals so the top card read clearly on narrow screens; Session 1 now ships with a dedicated mobile card stack layout, but gesture ergonomics are deferred to Session 2.
+
+## Upcoming Session Checklist
+- Session 2 must add real voting and summary behavior.
+- Session 3 must fix the Pages base-path mismatch if deployment targets `pawsnpref`.
+- Check whether `README.md` is still uncommitted before starting new feature work.
