@@ -1,6 +1,7 @@
 import type { CatCard } from '../../features/deck/types';
 
 export interface CataasCatRecord {
+  id?: string;
   _id?: string;
   tags?: string[] | unknown;
 }
@@ -14,7 +15,8 @@ export function buildCatImageUrl(id: string, query?: string): string {
 
 export function normalizeCatRecords(records: CataasCatRecord[]): CatCard[] {
   return records.flatMap((record) => {
-    const id = typeof record._id === 'string' ? record._id.trim() : '';
+    const rawId = typeof record.id === 'string' ? record.id : record._id;
+    const id = typeof rawId === 'string' ? rawId.trim() : '';
 
     if (!id) {
       return [];

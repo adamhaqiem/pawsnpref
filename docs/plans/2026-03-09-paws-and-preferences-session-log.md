@@ -4,6 +4,7 @@
 - Read the implementation plan first.
 - Treat the latest completed session here as the authoritative current state.
 - Do not rely on old chat history; if something is not written here or in code, assume it is not guaranteed context.
+- Stay in the main checkout by default. Do not create a git worktree for this repo unless the user explicitly asks for one.
 - At the end of every future session, append a new section using the same format and include exact verification results.
 
 ## Session 1
@@ -29,6 +30,18 @@
 - Problems faced: The fresh worktree had no dependencies installed, so `vitest` was initially unavailable until `npm.cmd install` ran. The full App test suite initially failed because renders were accumulating between tests, which required explicit `cleanup()` in `App.test.tsx`. An escalated `git status` inside the worktree also hit a dubious-ownership warning, so worktree metadata collection was limited.
 - Resolutions or follow-ups: Installed dependencies in `.worktrees/session-2`, added deterministic `Math.random` stubs and cleanup to stabilize App tests, and kept swipe math in pure helpers to avoid brittle DOM-only gesture assertions. Session 3 still needs the GitHub Pages base-path correction, README/deployment updates, and the chosen failed-image behavior.
 - Next session starting point: Implement Session 3 by handling image-load failures gracefully, refining stack/polish, correcting `vite.config.ts` from `/pawsnfren/` to the current repo path if deploying to `pawsnpref`, and adding the final README/deployment workflow updates.
+
+### Session 2 Workflow Note
+- The user does not want git worktrees used for this repo. Session 2 was merged back to `main`, the temporary worktree was removed, and future sessions should stay in the main checkout unless the user explicitly requests isolation.
+
+## Session 2 Follow-Up
+- Goal: Fix the live Cataas integration on `main`, document the regression, and preserve the lesson for future sessions.
+- Changes made: Updated the Cataas normalizer to accept both `id` and `_id`, added a regression test for the live `id` payload shape, and updated the plan artifacts so they reflect that Session 2 is complete, Session 3 is next, worktrees are not wanted for this repo, and the Cataas payload drift is now a known repeat-risk.
+- Files added/modified: `src/lib/cataas/cataas.ts`, `src/lib/cataas/cataas.test.ts`, `docs/plans/2026-03-09-paws-and-preferences-implementation.md`, and `docs/plans/2026-03-09-paws-and-preferences-session-log.md`.
+- Verification performed: `npm.cmd test -- src/lib/cataas/cataas.test.ts` first failed on the new `id`-based payload case and then passed after the parser fix. Final verification on `main`: `npm.cmd test` passed with 18 tests across 3 files, and `npm.cmd run build` passed.
+- Problems faced: The UI empty-state message was misleading because the API response was valid, but the adapter still assumed `_id` from older payloads. That failure mode looks identical to a real empty batch from the user’s perspective.
+- Resolutions or follow-ups: Keep the Cataas adapter tolerant of both `id` and `_id`, and treat upstream payload-shape drift as a likely recurring integration risk whenever the app suddenly reports an empty deck despite live API data existing.
+- Next session starting point: Continue with Session 3 from `main`, keeping an eye on Cataas payload compatibility while addressing image-failure handling, Pages base path, and final deployment/docs work.
 
 ## Upcoming Session Checklist
 - Session 3 must fix the Pages base-path mismatch if deployment targets `pawsnpref`.

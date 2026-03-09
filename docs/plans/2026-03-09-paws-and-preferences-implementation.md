@@ -14,10 +14,9 @@
 
 ### Repository Snapshot
 - Current branch target is `main`.
-- Last implementation commit already merged to `main`: `ea70613` (`feat: implement session 1 foundation`).
-- Session 1 is complete and verified.
-- `README.md` exists locally but may still be uncommitted if the current branch shows it as untracked; check `git status` first.
-- The code currently renders a live Cataas-backed card stack with loading, error, retry, and empty states, but no real voting flow yet.
+- Session 1 and Session 2 are complete and merged to `main`.
+- The app now supports button voting, swipe voting, completion summary, and restart flow.
+- `README.md` still needs to be checked during Session 3 work along with deployment/docs polish.
 
 ### Current Working Files
 - [src/app/App.tsx](/c:/REPOS/pawsnfren/src/app/App.tsx): current app state and UI shell
@@ -30,8 +29,7 @@
 
 ### Known Mismatches And Risks
 - `origin` now points to `https://github.com/adamhaqiem/pawsnpref.git`, but [vite.config.ts](/c:/REPOS/pawsnfren/vite.config.ts) still sets `base: '/pawsnfren/'`. This must be corrected before GitHub Pages deployment.
-- The current UI copy still says swipe support is coming in Session 2. Remove or replace that copy when Session 2 lands.
-- The `finished` deck status is currently reused as the empty-data state in Session 1. Session 2 should distinguish `empty-data` from `deck-complete` in rendered behavior, even if the enum remains unchanged.
+- Cataas API payload shape is not stable enough to assume `_id` only. The adapter in [src/lib/cataas/cataas.ts](/c:/REPOS/pawsnfren/src/lib/cataas/cataas.ts) must continue accepting both `id` and `_id`, or the app will falsely fall into the “No cats are ready right now” state.
 - Cataas browser access is assumed to work without auth. If a future thread sees CORS/network failures in-browser, stop and re-evaluate whether the app needs a fallback or a curated local list.
 
 ## Stable Product Decisions
@@ -40,6 +38,7 @@
 - Keep the UI mobile-first and playful-clean rather than cloning Tinder literally.
 - Keep the state local to the browser. Liked and disliked cards do not survive reloads.
 - Prefer minimal dependencies. Do not add a swipe library unless custom pointer handling becomes clearly unworkable.
+- Do not use git worktrees for this repo unless the user explicitly requests one. Future sessions should work in the main checkout.
 
 ## Existing Internal Types
 - `CatCard`
@@ -77,7 +76,7 @@ Delivered:
 Do not redo Session 1 unless a later task requires refactoring.
 
 ### Session 2
-Status: Next required session
+Status: Complete
 
 #### Session 2 Outcome
 Users can like or dislike cats by swiping left/right or by tapping explicit buttons. Each decision removes the top card, updates local liked/disliked arrays, and advances the deck. When no cards remain, the app shows a summary screen with liked count, liked gallery, and a restart action that fetches a fresh batch.
@@ -135,7 +134,7 @@ Users can like or dislike cats by swiping left/right or by tapping explicit butt
 - Tests and build pass fresh.
 
 ### Session 3
-Status: Final feature/deployment session
+Status: Next required session
 
 #### Session 3 Outcome
 The app feels complete on mobile, handles image-loading failures more gracefully, documents how to run/deploy, and is ready for GitHub Pages hosting from the correct repository path.
@@ -215,5 +214,6 @@ If Vite/Vitest/esbuild fails under sandbox restrictions in a future thread, reru
 1. Read this file.
 2. Read [docs/plans/2026-03-09-paws-and-preferences-session-log.md](/c:/REPOS/pawsnfren/docs/plans/2026-03-09-paws-and-preferences-session-log.md).
 3. Run `git status --short --branch` and confirm whether `README.md` or any other files are uncommitted.
-4. Read the current implementation entry points listed above.
-5. Continue with the next incomplete session only.
+4. Stay in the main checkout unless the user explicitly asks for a separate branch or worktree.
+5. Read the current implementation entry points listed above.
+6. Continue with the next incomplete session only.

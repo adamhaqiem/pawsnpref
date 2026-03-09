@@ -13,6 +13,25 @@ describe('buildCatImageUrl', () => {
 });
 
 describe('normalizeCatRecords', () => {
+  it('maps live Cataas records that use id instead of _id', () => {
+    const records: CataasCatRecord[] = [
+      {
+        id: 'cat-live-1',
+        tags: ['cute', 'black']
+      }
+    ];
+
+    expect(normalizeCatRecords(records)).toEqual([
+      {
+        id: 'cat-live-1',
+        imageUrl: 'https://cataas.com/cat/cat-live-1',
+        thumbUrl: 'https://cataas.com/cat/cat-live-1?width=320',
+        tags: ['cute', 'black'],
+        alt: 'Cat tagged cute, black'
+      }
+    ]);
+  });
+
   it('maps valid Cataas records into app cards', () => {
     const records: CataasCatRecord[] = [
       {
